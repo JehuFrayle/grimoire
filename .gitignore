@@ -1,0 +1,90 @@
+# ===============================
+# 📁 General
+# ===============================
+.DS_Store
+*.log
+*.tmp
+*.swp
+.env
+.env.*
+
+# ===============================
+# 🐳 Docker
+# ===============================
+docker-compose.override.yml
+**/Dockerfile.*
+**/docker-entrypoint.sh
+
+# ===============================
+# 🐘 PostgreSQL (data/volumes)
+# ===============================
+pgdata/
+db/data/
+*.sql~
+
+# ===============================
+# ⚙️ Go Backend
+# ===============================
+/backend/bin/
+/backend/build/
+/backend/dist/
+backend/*.exe
+backend/*.out
+backend/*.test
+
+# Go build artifacts
+*.exe
+*.test
+*.out
+*.o
+
+# Go modules
+/go.sum
+/vendor/
+
+# Go workspace files
+*.mod
+*.work
+
+# GoLand / VSCode
+.idea/
+.vscode/
+*.code-workspace
+
+# ===============================
+# 🌐 Angular Frontend
+# ===============================
+/frontend/dist/
+/frontend/out-tsc/
+/frontend/node_modules/
+frontend/.angular/
+frontend/.env
+
+# Angular IDE files
+frontend/.vscode/
+frontend/.idea/
+
+# ===============================
+# 🔍 Tests & coverage
+# ===============================
+coverage/
+*.lcov
+*.lcov.info
+*.coverage
+*.coverprofile
+*.testresult
+*.snap
+
+# ===============================
+# 🔧 Other
+# ===============================
+*.bak
+*.old
+*.orig
+*.tmp
+*.cache
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
