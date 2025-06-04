@@ -8,7 +8,7 @@ type User struct {
 	Email     string    `json:"email"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
-	Role      string    `json:"role"`    // e.g., "admin", "user"
+	Role      Role      `json:"role"`    // e.g., "admin", "user"
 	Active    bool      `json:"active"`  // Indicates if the user account is active
 	Profile   Profile   `json:"profile"` // Additional user profile information
 }
@@ -27,3 +27,11 @@ type Link struct {
 	Icon   string `json:"icon"`   // Optional icon or image URL for the link
 	Active bool   `json:"active"` // Indicates if the link is currently active
 }
+
+type Role string
+
+const (
+	RoleAdmin Role = "admin"
+	RoleUser  Role = "user"
+	RoleGuest Role = "guest"
+)
