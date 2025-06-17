@@ -1,29 +1,43 @@
 // Example for notes/handler.go
 package notes
 
-import "net/http"
+import (
+	"context"
+	"encoding/json"
+	"net/http"
+)
+
+var store Store // This should be set from main or server package
+
+func SetStore(s Store) {
+	store = s
+}
 
 func NotesHandler(w http.ResponseWriter, r *http.Request) {
-	reqCode := r.Method
-	switch reqCode {
+	switch r.Method {
 	case http.MethodGet:
-		// Handle GET request for notes
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("List of notes"))
+		// TODO: Parse query params if needed
+		notes, err := store.GetAll(context.Background())
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("Failed to get notes"))
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(notes)
 	case http.MethodPost:
-		// Handle POST request to create a new note
-		w.WriteHeader(http.StatusCreated)
-		w.Write([]byte("Note created"))
+		// TODO: Parse request body for new note
+		w.WriteHeader(http.StatusNotImplemented)
+		w.Write([]byte("Create note not implemented"))
 	case http.MethodPut:
-		// Handle PUT request to update an existing note
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("Note updated"))
+		// TODO: Parse request body for update
+		w.WriteHeader(http.StatusNotImplemented)
+		w.Write([]byte("Update note not implemented"))
 	case http.MethodDelete:
-		// Handle DELETE request to delete a note
-		w.WriteHeader(http.StatusNoContent)
-		w.Write([]byte("Note deleted"))
+		// TODO: Parse request for note ID to delete
+		w.WriteHeader(http.StatusNotImplemented)
+		w.Write([]byte("Delete note not implemented"))
 	default:
-		// Handle unsupported methods
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		w.Write([]byte("Method not allowed"))
 	}
