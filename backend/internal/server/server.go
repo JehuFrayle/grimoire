@@ -10,6 +10,7 @@ import (
 	"github.com/jehufrayle/grimoire/internal/database"
 	"github.com/jehufrayle/grimoire/internal/notes"
 	"github.com/jehufrayle/grimoire/internal/users"
+	"github.com/jehufrayle/grimoire/middleware"
 )
 
 func StartServer(ctx context.Context, addr string) {
@@ -18,8 +19,7 @@ func StartServer(ctx context.Context, addr string) {
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintln(w, "OK")
 	})
-	mux.HandleFunc("/", http.NotFound)
-	mux.HandleFunc("/hello", helloHandler)
+	mux.HandleFunc("GET /hello", helloHandler)
 	mux.HandleFunc("/api/notes", notes.NotesHandler)
 
 	// User-related endpoint
@@ -28,11 +28,19 @@ func StartServer(ctx context.Context, addr string) {
 	mux.HandleFunc("/api/users/", userHandler.UsersHandler)
 
 	// Create the HTTP server
+	middlewares := middleware.CreateStack(middleware.Logging, middleware.Authentication)
+
 	server := &http.Server{
 		Addr:    addr,
-		Handler: mux,
+		Handler: middlewares(mux),
 	}
 
+	/*
+		Adding CORS rule. For now it allows any request.
+		TODO: Update the corse rule to only allow requests from the frontend.
+	*/
+
+	// Channel to stop the server when necessary
 	serverStopped := make(chan struct{})
 
 	go func() {
@@ -52,7 +60,7 @@ func StartServer(ctx context.Context, addr string) {
 	defer cancel()
 
 	if err := server.Shutdown(shutdownCtx); err != nil {
-		log.Fatalf("graceful shutdown failed: %w", err)
+		log.Fatalf("graceful shutdown failed: %v", err)
 	}
 
 	<-serverStopped

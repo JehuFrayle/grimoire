@@ -3,7 +3,9 @@ package auth
 import (
 	"time"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
+	"github.com/jehufrayle/grimoire/internal/users"
 )
 
 // Session represents an authenticated session for a user.
@@ -26,4 +28,10 @@ type AuthResponse struct {
 	SessionToken string    `json:"token"`
 	ExpiresAt    time.Time `json:"expires_at"`
 	UserID       uuid.UUID `json:"user_id"`
+}
+
+type CustomClaims struct {
+	UserID string     `json:"user_id"`
+	Role   users.Role `json:"role"`
+	jwt.RegisteredClaims
 }

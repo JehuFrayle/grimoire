@@ -19,16 +19,6 @@ var initialUsers = map[string]User{
 		UpdatedAt: time.Now().Add(-2 * time.Hour),
 		Role:      RoleAdmin,
 		Active:    true,
-		Profile: Profile{
-			FirstName: "John",
-			LastName:  "Doe",
-			Bio:       "System administrator and DevOps enthusiast.",
-			AvatarURL: "https://example.com/avatars/jdoe.png",
-			Links: []Link{
-				{URL: "https://github.com/jdoe", Title: "GitHub", Icon: "github", Active: true},
-				{URL: "https://linkedin.com/in/jdoe", Title: "LinkedIn", Icon: "linkedin", Active: true},
-			},
-		},
 	},
 	"u2": {
 		ID:        "u2",
@@ -38,15 +28,6 @@ var initialUsers = map[string]User{
 		UpdatedAt: time.Now().Add(-24 * time.Hour),
 		Role:      RoleUser,
 		Active:    true,
-		Profile: Profile{
-			FirstName: "Alice",
-			LastName:  "Smith",
-			Bio:       "Frontend developer and UX designer.",
-			AvatarURL: "https://example.com/avatars/asmith.jpg",
-			Links: []Link{
-				{URL: "https://twitter.com/asmith", Title: "Twitter", Icon: "twitter", Active: true},
-			},
-		},
 	},
 	"u3": {
 		ID:        "u3",
@@ -56,13 +37,6 @@ var initialUsers = map[string]User{
 		UpdatedAt: time.Now().Add(-1 * time.Hour),
 		Role:      RoleGuest,
 		Active:    false,
-		Profile: Profile{
-			FirstName: "Guest",
-			LastName:  "User",
-			Bio:       "Limited access guest account.",
-			AvatarURL: "",
-			Links:     []Link{},
-		},
 	},
 }
 

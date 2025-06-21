@@ -3,14 +3,16 @@ package users
 import "time"
 
 type User struct {
-	ID        string    `json:"id"`
-	Username  string    `json:"username"`
-	Email     string    `json:"email"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-	Role      Role      `json:"role"`    // e.g., "admin", "user"
-	Active    bool      `json:"active"`  // Indicates if the user account is active
-	Profile   Profile   `json:"profile"` // Additional user profile information
+	ID           string     `json:"id"`
+	Username     string     `json:"username"`
+	Email        string     `json:"email"`
+	PasswordHash string     `json:"-"` // No se serializa al JSON para protegerlo
+	CreatedAt    time.Time  `json:"created_at"`
+	UpdatedAt    time.Time  `json:"updated_at"`
+	LastLogin    time.Time  `json:"last_login"`
+	DeletedAt    *time.Time `json:"deleted_at,omitempty"` // nil si no está borrado
+	Role         Role       `json:"role"`
+	Active       bool       `json:"active"`
 }
 
 type Profile struct {
