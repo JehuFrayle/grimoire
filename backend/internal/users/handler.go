@@ -81,21 +81,28 @@ func (h *Handler) GetUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
-	// Create a new user
 	repo := h.repo
-	var user User
-	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
+
+	// Define a struct to capture both user fields and password from the request body
+	var req struct {
+		User
+		Password string `json:"password"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		fmt.Println("Error decoding JSON:", err)
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
 		return
 	}
-	if err := repo.Create(r.Context(), &user); err != nil {
+
+	// Pass the password separately to the repo.Create method
+	if err := repo.Create(r.Context(), &req.User, req.Password); err != nil {
 		fmt.Println("Error creating user:", err)
 		http.Error(w, "Failed to create user", http.StatusInternalServerError)
 		return
 	}
 
-	utils.JSONResponse(w, user, http.StatusCreated) // Respond with the created user
+	utils.JSONResponse(w, req.User, http.StatusCreated) // Respond with the created user
 }
 
 func (h *Handler) UpdateUser(w http.ResponseWriter, r *http.Request) {

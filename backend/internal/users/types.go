@@ -1,6 +1,11 @@
 package users
 
-import "time"
+import (
+	"log"
+	"time"
+
+	"golang.org/x/crypto/bcrypt"
+)
 
 type User struct {
 	ID           string     `json:"id"`
@@ -13,6 +18,19 @@ type User struct {
 	DeletedAt    *time.Time `json:"deleted_at,omitempty"` // nil si no está borrado
 	Role         Role       `json:"role"`
 	Active       bool       `json:"active"`
+}
+
+func (u *User) VerifyPassword(password string) bool {
+	if len(u.PasswordHash) == 0 {
+		log.Println("PasswordHash is empty")
+		return false
+	}
+	err := bcrypt.CompareHashAndPassword([]byte(u.PasswordHash), []byte(password))
+	if err != nil {
+		log.Printf("Password verification failed: %v", err)
+		return false
+	}
+	return true
 }
 
 type Profile struct {

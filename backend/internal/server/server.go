@@ -2,11 +2,13 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"time"
 
+	"github.com/jehufrayle/grimoire/internal/auth"
 	"github.com/jehufrayle/grimoire/internal/database"
 	"github.com/jehufrayle/grimoire/internal/notes"
 	"github.com/jehufrayle/grimoire/internal/users"
@@ -27,8 +29,12 @@ func StartServer(ctx context.Context, addr string) {
 	userHandler := users.NewHandler(userRepo)
 	mux.HandleFunc("/api/users/", userHandler.UsersHandler)
 
+	// Login related endpoints
+	authHandler := auth.NewHandler(userRepo)
+	mux.HandleFunc("/api/login/", authHandler.LoginHandler)
+	mux.HandleFunc("/api/token", tokenValidatorHandler)
 	// Create the HTTP server
-	middlewares := middleware.CreateStack(middleware.Logging, middleware.Authentication)
+	middlewares := middleware.CreateStack(middleware.Logging)
 
 	server := &http.Server{
 		Addr:    addr,
@@ -72,4 +78,28 @@ func StartServer(ctx context.Context, addr string) {
 func helloHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("Welcome to Grimoire API"))
+}
+
+func tokenValidatorHandler(w http.ResponseWriter, r *http.Request) {
+	authHeader := r.Header.Get("Authorization")
+	if authHeader == "" {
+		http.Error(w, "Authorization header missing", http.StatusUnauthorized)
+		return
+	}
+	const prefix = "Bearer "
+	if len(authHeader) < len(prefix) || authHeader[:len(prefix)] != prefix {
+		http.Error(w, "Invalid Authorization header format", http.StatusUnauthorized)
+		return
+	}
+	token := authHeader[len(prefix):]
+	claims, err := auth.ValidateToken(token)
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(claims); err != nil {
+		http.Error(w, "Failed to encode claims", http.StatusInternalServerError)
+		return
+	}
 }

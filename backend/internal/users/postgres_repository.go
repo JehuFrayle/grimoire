@@ -4,9 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"golang.org/x/crypto/bcrypt"
 )
 
 // Implementation
@@ -48,22 +50,38 @@ func (r *PgUserRepository) GetByID(ctx context.Context, id string) (*User, error
 	return &user, err
 }
 
-func (r *PgUserRepository) Create(ctx context.Context, user *User) error {
-	query := `INSERT INTO users (username, email, role, active) 
-              VALUES ($1, $2, $3, $4)
+func (r *PgUserRepository) GetByEmail(ctx context.Context, email string) (*User, error) {
+	row := r.DB.QueryRow(ctx, `SELECT id, username, email, password_hash, created_at, updated_at, role, active FROM users WHERE email = $1`, email)
+	var user User
+	err := row.Scan(&user.ID, &user.Username, &user.Email, &user.PasswordHash, &user.CreatedAt, &user.UpdatedAt, &user.Role, &user.Active)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user by email: %w", err)
+	}
+	return &user, nil
+}
+
+func (r *PgUserRepository) Create(ctx context.Context, user *User, password string) error {
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	log.Print("Generated hash: ", hash)
+	if err != nil {
+		return fmt.Errorf("failed to hash password: %w", err)
+	}
+	user.PasswordHash = string(hash)
+
+	query := `INSERT INTO users (username, email, password_hash, role, active)
+              VALUES ($1, $2, $3, $4, $5)
               RETURNING id, created_at, updated_at`
 
-	err := r.DB.QueryRow(ctx, query, user.Username, user.Email, user.Role, user.Active).
+	err = r.DB.QueryRow(ctx, query, user.Username, user.Email, user.PasswordHash, user.Role, user.Active).
 		Scan(&user.ID, &user.CreatedAt, &user.UpdatedAt)
 	if err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) {
 			fmt.Printf("PostgreSQL error: %s (Code: %s)\n", pgErr.Message, pgErr.Code)
-			// Handle specific error codes
 			switch pgErr.Code {
-			case "23505": // unique_violation
+			case "23505":
 				return fmt.Errorf("user already exists: %w", err)
-			case "23503": // foreign_key_violation
+			case "23503":
 				return fmt.Errorf("referenced record does not exist: %w", err)
 			default:
 				return fmt.Errorf("database error: %w", err)
@@ -73,7 +91,6 @@ func (r *PgUserRepository) Create(ctx context.Context, user *User) error {
 	}
 	return nil
 }
-
 func (r *PgUserRepository) Update(ctx context.Context, user *User) error {
 	return fmt.Errorf("not implemented yet") // Placeholder for user update logic
 }
