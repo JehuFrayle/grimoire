@@ -16,8 +16,20 @@ const (
 	UserRoleKey contextKey = "userRole"
 )
 
+var publicPaths = map[string]bool{
+	"/api/auth/login":   true,
+	"/api/auth/signup":  true,
+	"/api/notes/public": true,
+}
+
 func Authentication(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Skip auth if the route is public
+		if publicPaths[r.URL.Path] {
+			next.ServeHTTP(w, r)
+			return
+		}
+
 		// Leer el header Authorization: Bearer <token>
 		authHeader := r.Header.Get("Authorization")
 		if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {

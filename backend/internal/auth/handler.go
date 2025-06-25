@@ -20,11 +20,6 @@ func NewHandler(userRepo users.UserRepository) *Handler {
 }
 
 func (h *Handler) LoginHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
 	var creds AuthCredentials
 	if err := json.NewDecoder(r.Body).Decode(&creds); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
@@ -67,4 +62,8 @@ func (h *Handler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	utils.JSONResponse(w, response, http.StatusOK)
+}
+
+func (h *Handler) SignUpHandler(w http.ResponseWriter, r *http.Request) {
+
 }

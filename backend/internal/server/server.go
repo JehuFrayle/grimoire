@@ -27,14 +27,16 @@ func StartServer(ctx context.Context, addr string) {
 	// User-related endpoint
 	userRepo := users.NewPgUserRepository(database.DB) // change this to change between memory and database
 	userHandler := users.NewHandler(userRepo)
-	mux.HandleFunc("/api/users/", userHandler.UsersHandler)
+	mux.HandleFunc("/api/users", middleware.Authentication(http.HandlerFunc(userHandler.UsersHandler)).ServeHTTP)
 
 	// Login related endpoints
 	authHandler := auth.NewHandler(userRepo)
-	mux.HandleFunc("/api/login/", authHandler.LoginHandler)
-	mux.HandleFunc("/api/token", tokenValidatorHandler)
+	mux.HandleFunc("POST /api/auth/login", authHandler.LoginHandler)
+	mux.HandleFunc("POST /api/auth/signup", authHandler.SignUpHandler)
+	mux.HandleFunc("GET /api/token", tokenValidatorHandler)
+
 	// Create the HTTP server
-	middlewares := middleware.CreateStack(middleware.Logging)
+	middlewares := middleware.CreateStack(middleware.Logging, middleware.Authentication)
 
 	server := &http.Server{
 		Addr:    addr,
