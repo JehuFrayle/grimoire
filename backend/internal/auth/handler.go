@@ -64,6 +64,49 @@ func (h *Handler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	utils.JSONResponse(w, response, http.StatusOK)
 }
 
-func (h *Handler) SignUpHandler(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) SignupHandler(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Username  string `json:"username"`
+		Email     string `json:"email"`
+		Password  string `json:"password"`
+		FirstName string `json:"first_name"`
+		LastName  string `json:"last_name"`
+	}
 
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		return
+	}
+
+	newUser := users.User{
+		Username: req.Username,
+		Email:    req.Email,
+		Role:     users.RoleUser, // por defecto
+		Active:   true,
+		Profile: users.Profile{
+			FirstName: req.FirstName,
+			LastName:  req.LastName,
+		},
+	}
+
+	// Insertar en base de datos y dejar que esta genere ID y timestamps
+	if err := h.userRepo.Create(r.Context(), &newUser, req.Password); err != nil {
+		http.Error(w, "Failed to create user", http.StatusInternalServerError)
+		return
+	}
+
+	// Luego del insert, tu repo debe devolver el `ID` generado al struct `newUser.ID`
+	token, err := GenerateToken(newUser.ID, newUser.Role)
+	if err != nil {
+		http.Error(w, "Error generating token", http.StatusInternalServerError)
+		return
+	}
+
+	resp := AuthResponse{
+		SessionToken: token,
+		ExpiresAt:    time.Now().Add(30 * 24 * time.Hour),
+		UserID:       uuid.MustParse(newUser.ID),
+	}
+
+	utils.JSONResponse(w, resp, http.StatusCreated)
 }

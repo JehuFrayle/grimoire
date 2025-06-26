@@ -4,7 +4,9 @@ package users
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
+	"strings"
 
 	"github.com/jehufrayle/grimoire/utils"
 )
@@ -15,35 +17,6 @@ type Handler struct {
 
 func NewHandler(repo UserRepository) *Handler {
 	return &Handler{repo: repo}
-}
-
-func (h *Handler) UsersHandler(w http.ResponseWriter, r *http.Request) {
-	// Handle single user requests here
-	id := utils.ExtractID(r.URL.Path, "/api/users/")
-
-	if id != "" {
-		switch r.Method {
-		case http.MethodGet:
-			h.GetUser(w, r) // Get a specific user
-		case http.MethodPut:
-			h.UpdateUser(w, r) // Update user information
-		case http.MethodDelete:
-			h.DeleteUser(w, r) // Delete a user
-		default:
-			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		}
-		return
-	}
-
-	switch r.Method {
-	case http.MethodGet:
-		h.GetAllUsers(w, r) // Get all users
-	case http.MethodPost:
-		h.CreateUser(w, r) // Create a new user
-	default:
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
 }
 
 func (h *Handler) GetAllUsers(w http.ResponseWriter, r *http.Request) { // Initialize an empty slice of User
@@ -62,17 +35,21 @@ func (h *Handler) GetAllUsers(w http.ResponseWriter, r *http.Request) { // Initi
 func (h *Handler) GetUser(w http.ResponseWriter, r *http.Request) {
 	// Get a specific user by ID
 	repo := h.repo
-	id := utils.ExtractID(r.URL.Path, "/api/users/")
+	id := r.PathValue("id")
+	log.Print(id)
+
 	if id == "" {
 		http.Error(w, "User ID is required", http.StatusBadRequest)
 		return
 	}
 	user, err := repo.GetByID(r.Context(), id)
 	if err != nil {
+		log.Print(err)
 		http.Error(w, "User not found", http.StatusNotFound)
 		return
 	}
 	if user == nil {
+		log.Print(err)
 		http.Error(w, "User not found", http.StatusNotFound)
 		return
 	}
@@ -127,17 +104,25 @@ func (h *Handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) DeleteUser(w http.ResponseWriter, r *http.Request) {
-	// Delete a user by ID
+
 	repo := h.repo
-	id := utils.ExtractID(r.URL.Path, "/api/users/")
+	id := r.PathValue("id")
+
 	if id == "" {
-		http.Error(w, "User ID is required", http.StatusBadRequest)
+		http.Error(w, "Missing user ID", http.StatusBadRequest)
 		return
 	}
-	if err := repo.Delete(r.Context(), id); err != nil {
-		fmt.Println("Error deleting user:", err)
+
+	err := repo.Delete(r.Context(), id)
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			http.Error(w, "User not found", http.StatusNotFound)
+			return
+		}
 		http.Error(w, "Failed to delete user", http.StatusInternalServerError)
 		return
 	}
-	w.WriteHeader(http.StatusNoContent) // Respond with no content on successful deletion
+
+	// Soft delete successful
+	w.WriteHeader(http.StatusNoContent)
 }

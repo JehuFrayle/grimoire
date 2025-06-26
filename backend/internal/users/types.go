@@ -18,6 +18,8 @@ type User struct {
 	DeletedAt    *time.Time `json:"deleted_at,omitempty"` // nil si no está borrado
 	Role         Role       `json:"role"`
 	Active       bool       `json:"active"`
+
+	Profile Profile
 }
 
 func (u *User) VerifyPassword(password string) bool {

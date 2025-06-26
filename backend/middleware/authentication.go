@@ -16,10 +16,12 @@ const (
 	UserRoleKey contextKey = "userRole"
 )
 
+// This map sets the public endpoints
 var publicPaths = map[string]bool{
 	"/api/auth/login":   true,
 	"/api/auth/signup":  true,
 	"/api/notes/public": true,
+	"/hello":            true,
 }
 
 func Authentication(next http.Handler) http.Handler {

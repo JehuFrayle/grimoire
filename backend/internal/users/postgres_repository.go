@@ -21,7 +21,7 @@ func NewPgUserRepository(db *pgxpool.Pool) *PgUserRepository {
 }
 
 func (r *PgUserRepository) GetAll(ctx context.Context) ([]User, error) {
-	query := "SELECT id, username, email, created_at, updated_at, role, active FROM users ORDER BY created_at DESC"
+	query := "SELECT id, username, email, created_at, updated_at, role, active FROM active_users ORDER BY created_at DESC"
 	rows, err := r.DB.Query(ctx, query)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query users: %w", err)
@@ -44,14 +44,14 @@ func (r *PgUserRepository) GetAll(ctx context.Context) ([]User, error) {
 }
 
 func (r *PgUserRepository) GetByID(ctx context.Context, id string) (*User, error) {
-	row := r.DB.QueryRow(ctx, `SELECT * FROM users WHERE id = $1`, id)
+	row := r.DB.QueryRow(ctx, `SELECT id, username, email, created_at, updated_at, role FROM active_users WHERE id = $1`, id)
 	var user User
 	err := row.Scan(&user.ID, &user.Username, &user.Email, &user.CreatedAt, &user.UpdatedAt, &user.Role)
 	return &user, err
 }
 
 func (r *PgUserRepository) GetByEmail(ctx context.Context, email string) (*User, error) {
-	row := r.DB.QueryRow(ctx, `SELECT id, username, email, password_hash, created_at, updated_at, role, active FROM users WHERE email = $1`, email)
+	row := r.DB.QueryRow(ctx, `SELECT id, username, email, password_hash, created_at, updated_at, role, active FROM active_users WHERE email = $1`, email)
 	var user User
 	err := row.Scan(&user.ID, &user.Username, &user.Email, &user.PasswordHash, &user.CreatedAt, &user.UpdatedAt, &user.Role, &user.Active)
 	if err != nil {
@@ -91,15 +91,26 @@ func (r *PgUserRepository) Create(ctx context.Context, user *User, password stri
 	}
 	return nil
 }
+
 func (r *PgUserRepository) Update(ctx context.Context, user *User) error {
 	return fmt.Errorf("not implemented yet") // Placeholder for user update logic
 }
 
 func (r *PgUserRepository) Delete(ctx context.Context, id string) error {
-	query := "DELETE FROM users WHERE id = $1"
-	_, err := r.DB.Exec(ctx, query, id)
+	query := `
+		UPDATE users 
+		SET deleted_at = now(), updated_at = now()
+		WHERE id = $1 AND deleted_at IS NULL`
+
+	result, err := r.DB.Exec(ctx, query, id)
 	if err != nil {
-		return fmt.Errorf("failed to delete user: %w", err)
+		return fmt.Errorf("failed to soft delete user: %w", err)
 	}
+
+	rowsAffected := result.RowsAffected()
+	if rowsAffected == 0 {
+		return fmt.Errorf("user not found or already deleted")
+	}
+
 	return nil
 }
