@@ -44,11 +44,11 @@ grimoire/
 
 | Layer        | Technology            |
 |--------------|------------------------|
-| Backend      | Go (Gin/Fiber), GORM/sqlc |
+| Backend      | Go (net/http)          |
 | Database     | PostgreSQL             |
 | Frontend     | Angular                |
 | Containers   | Docker + docker-compose |
-| Extras       | JWT (optional), Markdown, Git
+| Extras       | JWT (optional), Markdown, Git |
 
 ---
 
