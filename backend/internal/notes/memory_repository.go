@@ -30,6 +30,12 @@ func (r *InMemoryNoteRepository) Create(ctx context.Context, note *Note) error {
 	note.CreatedAt = now
 	note.UpdatedAt = now
 	note.DeletedAt = nil
+	for i, tag := range note.Tags {
+		note.Tags[i] = Tag{
+			ID:   uuid.New(),
+			Name: strings.ToLower(tag.Name), // Normalize tag names to lowercase
+		}
+	}
 
 	r.notes[note.ID.String()] = note
 	return nil
@@ -42,6 +48,19 @@ func (r *InMemoryNoteRepository) GetAll(ctx context.Context) ([]Note, error) {
 	var result []Note
 	for _, n := range r.notes {
 		if n.DeletedAt == nil {
+			result = append(result, *n)
+		}
+	}
+	return result, nil
+}
+
+func (r *InMemoryNoteRepository) GetByUserID(ctx context.Context, userID uuid.UUID) ([]Note, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	var result []Note
+
+	for _, n := range r.notes {
+		if n.DeletedAt == nil && n.UserID == userID {
 			result = append(result, *n)
 		}
 	}

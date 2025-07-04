@@ -39,9 +39,10 @@ func StartServer(ctx context.Context, addr string) {
 	mux.HandleFunc("GET /api/token", tokenValidatorHandler)
 
 	// Notes related endpoints
-	noteRepo := notes.NewInMemoryNoteRepository()
+	noteRepo := notes.NewPgNoteRepository(database.DB) // change this to change between memory and()
 	noteHandler := notes.NewHandler(noteRepo)
-	mux.HandleFunc("GET /api/notes", noteHandler.GetAllNotes)
+	mux.HandleFunc("GET /api/notes", noteHandler.GetUserNotes)
+	mux.HandleFunc("GET /api/admin/notes", noteHandler.GetAllNotes)
 	mux.HandleFunc("GET /api/notes/{id}", noteHandler.GetNoteByID)
 	mux.HandleFunc("POST /api/notes", noteHandler.CreateNote)
 	mux.HandleFunc("PATCH /api/notes/{id}", noteHandler.UpdateNote)

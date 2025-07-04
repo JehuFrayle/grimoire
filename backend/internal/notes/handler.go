@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/google/uuid"
+	"github.com/jehufrayle/grimoire/internal/users"
 	"github.com/jehufrayle/grimoire/middleware"
 	"github.com/jehufrayle/grimoire/utils"
 )
@@ -22,6 +23,13 @@ func NewHandler(repo NoteRepository) *Handler {
 func (h *Handler) GetAllNotes(w http.ResponseWriter, r *http.Request) {
 	// Get all notes
 	repo := h.repo
+	role := r.Context().Value(middleware.UserRoleKey).(users.Role)
+	log.Print(role)
+
+	if role != users.RoleAdmin {
+		http.Error(w, "Unauthorized access", http.StatusForbidden)
+		return
+	}
 
 	notes, err := repo.GetAll(r.Context())
 	if err != nil {
@@ -33,6 +41,32 @@ func (h *Handler) GetAllNotes(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Convert notes to JSON and write to response
+	utils.JSONResponse(w, notes, http.StatusOK)
+}
+
+func (h *Handler) GetUserNotes(w http.ResponseWriter, r *http.Request) {
+	// Get notes for a specific user
+	repo := h.repo
+	userIDstr, ok := r.Context().Value(middleware.UserIDKey).(string)
+	if !ok {
+		http.Error(w, "User ID not found in context", http.StatusUnauthorized)
+		return
+	}
+
+	userID, err := uuid.Parse(userIDstr)
+	if err != nil {
+		http.Error(w, "Invalid user ID format", http.StatusBadRequest)
+		return
+	}
+	notes, err := repo.GetByUserID(r.Context(), userID)
+	if err != nil {
+		http.Error(w, "Failed to retrieve notes for user", http.StatusInternalServerError)
+		return
+	}
+	if notes == nil {
+		notes = []Note{}
+	}
+
 	utils.JSONResponse(w, notes, http.StatusOK)
 }
 
@@ -72,7 +106,6 @@ func (h *Handler) CreateNote(w http.ResponseWriter, r *http.Request) {
 	var requestBody req
 
 	if err := json.NewDecoder(r.Body).Decode(&requestBody); err != nil {
-		log.Printf("Error decoding request body: %v", err)
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
@@ -88,11 +121,18 @@ func (h *Handler) CreateNote(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid user ID format", http.StatusBadRequest)
 		return
 	}
-
+	tags := make([]Tag, len(requestBody.Tags))
+	for i, tag := range requestBody.Tags {
+		tags[i] = Tag{
+			Name: tag,
+		}
+	}
 	note = Note{
-		Title:   requestBody.Title,
-		Content: requestBody.Content,
-		UserID:  userID, // Assuming user_id is passed in the path
+		Title:    requestBody.Title,
+		Content:  requestBody.Content,
+		UserID:   userID, // Assuming user_id is passed in the path
+		IsPublic: requestBody.IsPublic,
+		Tags:     tags,
 	}
 	if err := repo.Create(r.Context(), &note); err != nil {
 		http.Error(w, "Failed to create note", http.StatusInternalServerError)
