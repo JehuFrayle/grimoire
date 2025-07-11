@@ -13,6 +13,7 @@ import (
 	"github.com/jehufrayle/grimoire/internal/notes"
 	"github.com/jehufrayle/grimoire/internal/users"
 	"github.com/jehufrayle/grimoire/middleware"
+	"github.com/rs/cors"
 )
 
 func StartServer(ctx context.Context, addr string) {
@@ -50,17 +51,19 @@ func StartServer(ctx context.Context, addr string) {
 	mux.HandleFunc("DELETE /api/notes/{id}", noteHandler.DeleteNote)
 
 	// Create the HTTP server
-	middlewares := middleware.CreateStack(middleware.Logging, middleware.Authentication)
+	middlewares := middleware.CreateStack(middleware.Logging, middleware.Authentication, middleware.Authorization)
+	c := cors.New(cors.Options{
+		AllowedOrigins:   []string{"*"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Authorization", "Content-Type"},
+		AllowCredentials: true,
+	})
+	handler := c.Handler(middlewares(mux))
 
 	server := &http.Server{
 		Addr:    addr,
-		Handler: middlewares(mux),
+		Handler: handler,
 	}
-
-	/*
-		Adding CORS rule. For now it allows any request.
-		TODO: Update the corse rule to only allow requests from the frontend.
-	*/
 
 	// Channel to stop the server when necessary
 	serverStopped := make(chan struct{})
