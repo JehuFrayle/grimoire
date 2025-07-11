@@ -34,7 +34,7 @@ func (h *Handler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Verify password (assuming you have a VerifyPassword method in your User type)
+	// Verify password
 	if !user.VerifyPassword(creds.Password) {
 		log.Print("Invalid password")
 		log.Print("User hash:", user.PasswordHash)

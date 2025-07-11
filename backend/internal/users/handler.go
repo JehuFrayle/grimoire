@@ -1,4 +1,3 @@
-// Example for notes/handler.go
 package users
 
 import (
@@ -8,6 +7,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/jehufrayle/grimoire/internal/shared"
 	"github.com/jehufrayle/grimoire/utils"
 )
 
@@ -125,4 +125,9 @@ func (h *Handler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 
 	// Soft delete successful
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *Handler) GetCurrentUser(w http.ResponseWriter, r *http.Request) {
+	id := r.Context().Value(shared.UserIDKey).(Role)
+	w.Write([]byte(string(id)))
 }

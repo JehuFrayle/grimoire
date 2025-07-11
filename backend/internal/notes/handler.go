@@ -70,6 +70,44 @@ func (h *Handler) GetUserNotes(w http.ResponseWriter, r *http.Request) {
 	utils.JSONResponse(w, notes, http.StatusOK)
 }
 
+func (h *Handler) GetUserNoteByID(w http.ResponseWriter, r *http.Request) {
+	// Get a specific note by ID
+	repo := h.repo
+	id := r.PathValue("id")
+	userIDstr, ok := r.Context().Value(middleware.UserIDKey).(string)
+	userID, err := uuid.Parse(userIDstr)
+	if err != nil {
+		http.Error(w, "Invalid user ID format", http.StatusBadRequest)
+		return
+	}
+	if !ok {
+		http.Error(w, "User ID not found in context", http.StatusUnauthorized)
+		return
+	}
+
+	if id == "" {
+		http.Error(w, "Note ID is required", http.StatusBadRequest)
+		return
+	}
+	note, err := repo.GetByID(r.Context(), id)
+	if err != nil {
+		http.Error(w, "Note not found", http.StatusNotFound)
+		return
+	}
+	if note == nil {
+		http.Error(w, "Note not found", http.StatusNotFound)
+		return
+	}
+	// Check if the note belongs to the user
+	if note.UserID != userID {
+		http.Error(w, "Unauthorized access to this note", http.StatusForbidden)
+		return
+	}
+
+	// Convert note to JSON and write to response
+	utils.JSONResponse(w, note, http.StatusOK)
+}
+
 func (h *Handler) GetNoteByID(w http.ResponseWriter, r *http.Request) {
 	// Get a specific note by ID
 	repo := h.repo
@@ -79,6 +117,7 @@ func (h *Handler) GetNoteByID(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Note ID is required", http.StatusBadRequest)
 		return
 	}
+
 	note, err := repo.GetByID(r.Context(), id)
 	if err != nil {
 		http.Error(w, "Note not found", http.StatusNotFound)
