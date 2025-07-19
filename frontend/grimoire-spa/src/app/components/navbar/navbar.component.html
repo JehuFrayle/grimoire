@@ -1,0 +1,9 @@
+<nav>
+  <a [routerLink]="['/']">Home</a>
+  @if (!authService.isAuthenticated()) {
+  <a [routerLink]="['/login']">Login</a>
+  <a [routerLink]="['/signup']">Signup</a>
+  } @else {
+  <a (click)="logout()">Logout</a>
+  }
+</nav>

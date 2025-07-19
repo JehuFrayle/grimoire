@@ -1,0 +1,14 @@
+<div>
+  <h2>My Notes</h2>
+  <a [routerLink]="['/new-note']">New Note</a>
+  <ul>
+    @for (note of notes; track note.id) {
+    <li>
+      <h3>{{ note.title }}</h3>
+      <p>{{ note.content }}</p>
+      <a [routerLink]="['/edit-note', note.id]">Edit</a>
+      <button (click)="deleteNote(note.id)">Delete</button>
+    </li>
+    }
+  </ul>
+</div>

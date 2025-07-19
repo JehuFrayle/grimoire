@@ -1,0 +1,18 @@
+<div>
+  @if (noteId) {
+    <h2>Edit Note</h2>
+  } @else {
+    <h2>New Note</h2>
+  }
+  <form [formGroup]="noteForm" (ngSubmit)="onSubmit()">
+    <div>
+      <label for="title">Title</label>
+      <input id="title" formControlName="title">
+    </div>
+    <div>
+      <label for="content">Content</label>
+      <textarea id="content" formControlName="content"></textarea>
+    </div>
+    <button type="submit" [disabled]="!noteForm.valid">Save</button>
+  </form>
+</div>
